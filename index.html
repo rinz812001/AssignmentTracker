@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Assignment Tracker Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: #f0f2f5;
+      color: #1f2328;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1e3a5f;
+      color: #fff;
+      padding: 24px 40px;
+    }
+    header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.3px; }
+    header p  { font-size: 0.875rem; color: #a8c4e0; margin-top: 4px; }
+
+    /* ── Main container ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── Section titles ── */
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #57606a;
+      margin-bottom: 12px;
+    }
+
+    /* ── Summary Cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: box-shadow 0.15s;
+    }
+    .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+
+    .card-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #57606a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .card-value {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .card-sub {
+      font-size: 0.8rem;
+      color: #57606a;
+      margin-top: 2px;
+    }
+
+    .card.total  .card-value { color: #1e3a5f; }
+    .card.submitted .card-value { color: #16a34a; }
+    .card.not-submitted .card-value { color: #dc2626; }
+
+    .card-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      width: fit-content;
+    }
+    .card.submitted .card-badge    { background: #dcfce7; color: #15803d; }
+    .card.not-submitted .card-badge { background: #fee2e2; color: #b91c1c; }
+    .card.total .card-badge         { background: #dbeafe; color: #1d4ed8; }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid #e5e7eb; margin: 0 0 28px; }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      background: #f0f2f5;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .filter-btn {
+      padding: 6px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #57606a;
+      transition: background 0.15s, color 0.15s;
+    }
+    .filter-btn.active {
+      background: #fff;
+      color: #1e3a5f;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .search-box {
+      margin-left: auto;
+      padding: 7px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      outline: none;
+      width: 220px;
+      background: #fff;
+      transition: border-color 0.15s;
+    }
+    .search-box:focus { border-color: #3b82d4; }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    thead th {
+      background: #f7f8fa;
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #57606a;
+      border-bottom: 1px solid #e5e7eb;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    thead th:hover { color: #1e3a5f; }
+    thead th .sort-icon { margin-left: 4px; opacity: 0.4; font-style: normal; }
+    thead th.sorted .sort-icon { opacity: 1; color: #3b82d4; }
+
+    tbody tr {
+      border-bottom: 1px solid #f0f2f5;
+      transition: background 0.1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f7f8fa; }
+
+    td { padding: 13px 16px; vertical-align: middle; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.yes { background: #dcfce7; color: #15803d; }
+    .badge.no  { background: #fee2e2; color: #b91c1c; }
+
+    .student-id { font-size: 0.78rem; color: #57606a; }
+
+    /* Toggle checkbox */
+    .toggle-wrap { display: flex; justify-content: center; }
+    .toggle {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      cursor: pointer;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #e5e7eb;
+      border-radius: 99px;
+      transition: background 0.2s;
+    }
+    .slider::before {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .slider { background: #16a34a; }
+    .toggle input:checked + .slider::before { transform: translateX(18px); }
+
+    /* Empty state */
+    .empty-row td {
+      text-align: center;
+      padding: 40px;
+      color: #57606a;
+      font-size: 0.875rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px 16px 24px;
+      font-size: 0.72rem;
+      color: #57606a;
+      border-top: 1px solid #e5e7eb;
+      margin-top: 48px;
+    }
+
+    @media (max-width: 640px) {
+      .cards { grid-template-columns: 1fr; }
+      header { padding: 18px 20px; }
+      main   { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📋 My Assignment Tracker Dashboard</h1>
+  <p>Track student submission status across all assignments</p>
+</header>
+
+<main>
+
+  <!-- Summary Cards -->
+  <p class="section-title">Overview</p>
+  <div class="cards">
+    <div class="card total">
+      <span class="card-label">Total Students</span>
+      <span class="card-value" id="card-total">0</span>
+      <span class="card-badge" id="badge-total"></span>
+      <span class="card-sub">Enrolled in this course</span>
+    </div>
+    <div class="card submitted">
+      <span class="card-label">Submitted</span>
+      <span class="card-value" id="card-submitted">0</span>
+      <span class="card-badge" id="badge-submitted"></span>
+      <span class="card-sub">Assignments turned in</span>
+    </div>
+    <div class="card not-submitted">
+      <span class="card-label">Not Submitted</span>
+      <span class="card-value" id="card-not-submitted">0</span>
+      <span class="card-badge" id="badge-not-submitted"></span>
+      <span class="card-sub">Pending or overdue</span>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- Checklist Section -->
+  <p class="section-title">Assignment Checklist</p>
+
+  <div class="toolbar">
+    <div class="filter-group">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="submitted">Submitted</button>
+      <button class="filter-btn" data-filter="not-submitted">Not Submitted</button>
+    </div>
+    <input class="search-box" type="text" id="search" placeholder="🔍  Search student or assignment…" />
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-col="student_name">Student Name <i class="sort-icon">↕</i></th>
+          <th data-col="student_id">Student ID <i class="sort-icon">↕</i></th>
+          <th data-col="assignment_title">Assignment <i class="sort-icon">↕</i></th>
+          <th data-col="due_date">Due Date <i class="sort-icon">↕</i></th>
+          <th data-col="submitted" style="text-align:center">Status <i class="sort-icon">↕</i></th>
+          <th style="text-align:center">Toggle</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer>Made with IBM Bob</footer>
+
+<script>
+  // ── Sample Data ──────────────────────────────────────────────
+  const students = [
+    { student_name: "Alice Johnson",    student_id: "S001", assignment_title: "Essay on Climate Change",  due_date: "2025-07-10", submitted: true  },
+    { student_name: "Bob Smith",        student_id: "S002", assignment_title: "Essay on Climate Change",  due_date: "2025-07-10", submitted: false },
+    { student_name: "Carol White",      student_id: "S003", assignment_title: "Math Problem Set 3",       due_date: "2025-07-12", submitted: true  },
+    { student_name: "David Lee",        student_id: "S004", assignment_title: "Math Problem Set 3",       due_date: "2025-07-12", submitted: false },
+    { student_name: "Emma Davis",       student_id: "S005", assignment_title: "History Research Paper",   due_date: "2025-07-15", submitted: true  },
+    { student_name: "Frank Miller",     student_id: "S006", assignment_title: "Essay on Climate Change",  due_date: "2025-07-10", submitted: false },
+    { student_name: "Grace Wilson",     student_id: "S007", assignment_title: "Math Problem Set 3",       due_date: "2025-07-12", submitted: true  },
+    { student_name: "Henry Moore",      student_id: "S008", assignment_title: "History Research Paper",   due_date: "2025-07-15", submitted: false },
+    { student_name: "Isabella Taylor",  student_id: "S009", assignment_title: "Essay on Climate Change",  due_date: "2025-07-10", submitted: true  },
+    { student_name: "James Anderson",   student_id: "S010", assignment_title: "Math Problem Set 3",       due_date: "2025-07-12", submitted: false },
+    { student_name: "Karen Thomas",     student_id: "S011", assignment_title: "History Research Paper",   due_date: "2025-07-15", submitted: true  },
+    { student_name: "Liam Jackson",     student_id: "S012", assignment_title: "Essay on Climate Change",  due_date: "2025-07-10", submitted: false },
+  ];
+
+  // ── State ────────────────────────────────────────────────────
+  let data        = students.map(s => ({ ...s }));
+  let activeFilter = "all";
+  let searchQuery  = "";
+  let sortCol      = null;
+  let sortDir      = 1; // 1 = asc, -1 = desc
+
+  // ── Cards ────────────────────────────────────────────────────
+  function updateCards() {
+    const total    = data.length;
+    const subCount = data.filter(s => s.submitted).length;
+    const notCount = total - subCount;
+    const pct      = total ? Math.round((subCount / total) * 100) : 0;
+
+    document.getElementById("card-total").textContent        = total;
+    document.getElementById("card-submitted").textContent    = subCount;
+    document.getElementById("card-not-submitted").textContent = notCount;
+
+    document.getElementById("badge-total").textContent        = `${total} students`;
+    document.getElementById("badge-submitted").textContent    = `${pct}% of class`;
+    document.getElementById("badge-not-submitted").textContent = `${100 - pct}% remaining`;
+  }
+
+  // ── Table ────────────────────────────────────────────────────
+  function getFiltered() {
+    return data.filter(row => {
+      const matchFilter =
+        activeFilter === "all" ||
+        (activeFilter === "submitted"     &&  row.submitted) ||
+        (activeFilter === "not-submitted" && !row.submitted);
+
+      const q = searchQuery.toLowerCase();
+      const matchSearch =
+        !q ||
+        row.student_name.toLowerCase().includes(q) ||
+        row.assignment_title.toLowerCase().includes(q) ||
+        row.student_id.toLowerCase().includes(q);
+
+      return matchFilter && matchSearch;
+    });
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById("table-body");
+    let rows = getFiltered();
+
+    if (sortCol) {
+      rows = [...rows].sort((a, b) => {
+        const av = a[sortCol], bv = b[sortCol];
+        if (typeof av === "boolean") return (av === bv ? 0 : av ? -1 : 1) * sortDir;
+        return av.localeCompare(bv) * sortDir;
+      });
+    }
+
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No students match the current filter.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rows.map((row, i) => {
+      const realIndex = data.indexOf(row);
+      const badgeCls  = row.submitted ? "yes" : "no";
+      const badgeTxt  = row.submitted ? "✅ Submitted" : "❌ Not Submitted";
+      return `
+        <tr>
+          <td><strong>${row.student_name}</strong></td>
+          <td><span class="student-id">${row.student_id}</span></td>
+          <td>${row.assignment_title}</td>
+          <td>${row.due_date}</td>
+          <td style="text-align:center"><span class="badge ${badgeCls}">${badgeTxt}</span></td>
+          <td>
+            <div class="toggle-wrap">
+              <label class="toggle" title="${row.submitted ? 'Mark as not submitted' : 'Mark as submitted'}">
+                <input type="checkbox" ${row.submitted ? "checked" : ""}
+                       onchange="toggleStudent(${realIndex}, this.checked)" />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </td>
+        </tr>`;
+    }).join("");
+  }
+
+  function render() {
+    updateCards();
+    renderTable();
+  }
+
+  // ── Toggle submission ────────────────────────────────────────
+  function toggleStudent(index, value) {
+    data[index].submitted = value;
+    render();
+  }
+
+  // ── Filter buttons ───────────────────────────────────────────
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeFilter = btn.dataset.filter;
+      renderTable();
+    });
+  });
+
+  // ── Search ───────────────────────────────────────────────────
+  document.getElementById("search").addEventListener("input", e => {
+    searchQuery = e.target.value;
+    renderTable();
+  });
+
+  // ── Column sort ──────────────────────────────────────────────
+  document.querySelectorAll("thead th[data-col]").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.col;
+      if (sortCol === col) {
+        sortDir *= -1;
+      } else {
+        sortCol = col;
+        sortDir = 1;
+      }
+      document.querySelectorAll("thead th").forEach(h => h.classList.remove("sorted"));
+      th.classList.add("sorted");
+      th.querySelector(".sort-icon").textContent = sortDir === 1 ? "↑" : "↓";
+      renderTable();
+    });
+  });
+
+  // ── Init ─────────────────────────────────────────────────────
+  render();
+</script>
+</body>
+</html>
